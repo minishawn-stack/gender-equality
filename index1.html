@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDGs Gender Equality</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4eae1;
+        }
+
+        /* Village Game Board Map */
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            /* Stylized countryside/village green landscape */
+            background: linear-gradient(to bottom, #a8e063, #56ab2f);
+            overflow: hidden;
+        }
+
+        /* Top Header UI Positioning */
+        header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 35px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+            pointer-events: auto;
+        }
+
+        #score-panel {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px 25px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #2e7d32;
+            pointer-events: auto;
+        }
+
+        /* Path connecting huts to emphasize a village trail map */
+        .village-path {
+            position: absolute;
+            width: 90%;
+            height: 70%;
+            top: 15%;
+            left: 5%;
+            border: 6px dashed rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Straw Huts Elements */
+        .hut-container {
+            position: absolute;
+            cursor: pointer;
+            z-index: 2;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+
+        .hut-container:hover {
+            transform: scale(1.15);
+        }
+
+        /* Custom pure-CSS dynamic straw hut graphic rendering */
+        .straw-hut {
+            width: 70px;
+            height: 55px;
+            background: #d7ccc8; /* Mud wall base */
+            border-radius: 4px;
+            position: relative;
+            border: 2px solid #5d4037;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        /* Straw Roof conical rendering */
+        .straw-hut::before {
+            content: '';
+            position: absolute;
+            top: -35px;
+            left: -15px;
+            width: 0;
+            height: 0;
+            border-left: 48px solid transparent;
+            border-right: 48px solid transparent;
+            border-bottom: 36px solid #bcaaa4; /* Straw layer */
+            filter: drop-shadow(0px -2px 1px #8d6e63);
+        }
+
+        /* Hut Door */
+        .straw-hut::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 23px;
+            width: 20px;
+            height: 28px;
+            background: #5d4037;
+            border-radius: 4px 4px 0 0;
+        }
+
+        /* Hut state stylings */
+        .hut-container.answered {
+            opacity: 0.6;
+            filter: grayscale(80%);
+            cursor: not-allowed;
+        }
+
+        .hut-label {
+            display: inline-block;
+            margin-top: 5px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Modal Overlay for Multiple-Choice Questions */
+        #quiz-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        #quiz-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            width: 90%;
+            max-width: 550px;
+            padding: 35px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            transform: translateY(-30px);
+            transition: transform 0.3s ease;
+        }
+
+        #quiz-modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-content h3 {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .option-btn {
+            background: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 1rem;
+            text-align: left;
+            cursor: pointer;
+            font-weight: 600;
+            color: #424242;
+            transition: all 0.2s ease;
+        }
+
+        .option-btn:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            color: #0d47a1;
+        }
+
+        /* End Game Screening Overlays */
+        #result-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #2c3e50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        #result-screen.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .result-box {
+            background: #ffffff;
+            padding: 45px 50px;
+            border-radius: 24px;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        }
+
+        .result-box h2 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .result-box p {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .action-btn {
+            padding: 14px 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .retry-theme h2 { color: #d32f2f; }
+        .retry-theme .action-btn { background: #d32f2f; }
+        
+        .pass-theme h2 { color: #2e7d32; }
+        .pass-theme .action-btn { background: #2e7d32; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- Structural Header -->
+        <header>
+            <h1>SDGs Gender Equality</h1>
+            <div id="score-panel">Correct: <span id="score-counter">0</span> / 10</div>
+        </header>
+
+        <!-- Connecting design trail path -->
+        <div class="village-path"></div>
+
+        <!-- Huts deployment map zone layout -->
+        <div id="village-map"></div>
+
+        <!-- Pop-up Interactive Dialog Box -->
+        <div id="quiz-modal">
+            <div class="modal-content">
+                <h3 id="question-text">Question content placeholder text?</h3>
+                <div class="options-list" id="options-container">
+                    <!-- Javascript populates button choices dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- End game dynamic challenge status dashboard -->
+        <div id="result-screen">
+            <div class="result-box" id="result-box-content">
+                <!-- Javascript populates dynamic layout structural themes here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Comprehensive dataset of 10 structural SDG 5 Gender Equality trivia items
+        const questions = [
+            {
+                q: "What is the primary focus of UN Sustainable Development Goal 5 (SDG 5)?",
+                options: ["Quality Education", "Gender Equality", "Clean Water", "Climate Action"],
+                answer: 1
+            },
+            {
+                q: "Which term describes giving women and men equal opportunities, rights, and responsibilities?",
+                options: ["Gender Equality", "Gender Differentiation", "Stereotyping", "Segregation"],
+                answer: 0
+            },
+            {
+                q: "Globally, what major economic disparity issue does SDG 5 look to eliminate?",
+                options: ["The Gender Pay Gap", "Currency Fluctuation", "Trade Tariffs", "Tax Brackets"],
+                answer: 0
+            },
+            {
+                q: "Unpaid domestic care chores (cooking, cleaning) are statistically performed mostly by whom?",
+                options: ["Equally split", "Outsourced entities", "Women and girls", "Automated appliances"],
+                answer: 2
+            },
+            {
+                q: "What is an effective way to promote gender equality inside corporate boardrooms?",
+                options: ["Limiting promotions", "Equal representation & diverse leadership", "Paying based on age", "Ignoring qualifications"],
+                answer: 1
+            },
+            {
+                q: "True or False: Gender equality is strictly a women's issue and does not benefit men.",
+                options: ["True, men lose out", "False, it strengthens economies and societies for everyone"],
+                answer: 1
+            },
+            {
+                q: "Ensuring women have full access to sexual and reproductive health rights falls under which Goal?",
+                options: ["SDG 1", "SDG 5", "SDG 7", "SDG 12"],
+                answer: 1
+            },
+            {
+                q: "Which practices does SDG 5 explicitly target for complete elimination globally?",
+                options: ["Child marriage and female genital mutilation", "Standard marriage licenses", "Working overtime", "Remote working structures"],
+                answer: 0
+            },
+            {
+                q: "What barrier often prevents girls from finishing primary and secondary schooling in remote areas?",
+                options: ["Lack of safe sanitation facilities", "Too many books", "Excessive internet access", "Overfunding"],
+                answer: 0
+            },
+            {
+                q: "What does giving women equal rights to land ownership and financial inheritances foster?",
+                options: ["Economic dependency", "Economic empowerment and poverty reduction", "Market collapse", "No visible difference"],
+                answer: 1
+            }
+        ];
+
+        // Custom geographical coordinate clusters to scatter huts uniquely across the container landscape map
+        const hutPositions = [
+            { left: "10%", top: "25%" },
+            { left: "28%", top: "20%" },
+            { left: "48%", top: "18%" },
+            { left: "70%", top: "22%" },
+            { left: "85%", top: "40%" },
+            { left: "75%", top: "65%" },
+            { left: "52%", top: "72%" },
+            { left: "30%", top: "75%" },
+            { left: "12%", top: "60%" },
+            { left: "42%", top: "46%" }
+        ];
+
+        let correctCount = 0;
+        let answeredCount = 0;
+        let activeQuestionIndex = null;
+        let activeHutElement = null;
+
+        const villageMap = document.getElementById('village-map');
+        const quizModal = document.getElementById('quiz-modal');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const scoreCounter = document.getElementById('score-counter');
+        const resultScreen = document.getElementById('result-screen');
+        const resultBoxContent = document.getElementById('result-box-content');
+
+        // Setup the physical layout of huts across the village map array grid
+        function setupVillage() {
+            villageMap.innerHTML = '';
+            questions.forEach((q, index) => {
+                const pos = hutPositions[index];
+                
+                const container = document.createElement('div');
+                container.classList.add('hut-container');
+                container.style.left = pos.left;
+                container.style.top = pos.top;
+                container.dataset.index = index;
+
+                const hut = document.createElement('div');
+                hut.classList.add('straw-hut');
+
+                const label = document.createElement('div');
+                label.classList.add('hut-label');
+                label.innerText = `Hut ${index + 1}`;
+
+                container.appendChild(hut);
+                container.appendChild(label);
+                
+                container.addEventListener('click', () => openQuiz(index, container));
+                villageMap.appendChild(container);
+            });
+        }
+
+        // Trigger opening modal to show multiple choice question values
+        function openQuiz(index, element) {
+            if (element.classList.contains('answered')) return;
+            
+            activeQuestionIndex = index;
+            activeHutElement = element;
+            const targetData = questions[index];
+
+            questionText.innerText = targetData.q;
+            optionsContainer.innerHTML = '';
+
+            targetData.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.classList.add('option-btn');
+                btn.innerText = opt;
+                btn.addEventListener('click', () => evaluateAnswer(idx));
+                optionsContainer.appendChild(btn);
+            });
+
+            quizModal.classList.add('active');
+        }
+
+        // Process answer check parameters instantly upon user selection click 
+        function evaluateAnswer(selectedIdx) {
+            quizModal.classList.remove('active');
+            
+            const currentQuestion = questions[activeQuestionIndex];
+            
+            if (selectedIdx === currentQuestion.answer) {
+                correctCount++;
+                scoreCounter.innerText = correctCount;
+            }
+
+            // Flag hut element as completed
+            activeHutElement.classList.add('answered');
+            answeredCount++;
+
+            // If game cycle finishes, invoke calculation routing thresholds
+            if (answeredCount === questions.length) {
+                setTimeout(evaluateGameCompletion, 600);
+            }
+        }
+
+        // Show structural ending dashboard UI matrices 
+        function evaluateGameCompletion() {
+            if (correctCount < 8) {
+                // Retry layout path configuration template
+                resultBoxContent.className = "result-box retry-theme";
+                resultBoxContent.innerHTML = `
+                    <h2>Challenge Again ❌</h2>
+                    <p>You answered <strong>${correctCount}</strong> out of 10 questions correctly. You need at least 8 correct answers to proceed.</p>
+                    <button class="action-btn" onclick="handleRetry()">Retry</button>
+                `;
+            } else {
+                // Next level layout transition metrics configurations 
+                resultBoxContent.className = "result-box pass-theme";
+                resultBoxContent.innerHTML = `
+                    <h2>Proceed to Next Level 🎉</h2>
+                    <p>Excellent work! You answered <strong>${correctCount}</strong> out of 10 questions correctly. You have proven your grasp on basic gender equality guidelines.</p>
+                    <button class="action-btn" onclick="handleNextLevel()">Next Level</button>
+                `;
+            }
+            resultScreen.classList.add('active');
+        }
+
+        function handleRetry() {
+            window.location.reload();
+        }
+
+        function handleNextLevel() {
+            window.location.href = "level2.html";
+        }
+
+        // Initiate sequence immediately on layout paint cycles
+        window.onload = setupVillage;
+    </script>
+</body>
+</html>
